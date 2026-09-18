@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Instructional Staff Employment, Animated</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page-plane:     #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --accent-wash:    rgba(42,120,214,0.10);
+
+    --series-1: #2a78d6; /* Full-Time Tenured Faculty */
+    --series-2: #eb6834; /* Full-Time Non-Tenure-Track Faculty */
+    --series-3: #1baf7a; /* Full-Time Tenure-Track Faculty */
+    --series-4: #eda100; /* Part-Time Faculty */
+    --series-5: #e87ba4; /* Graduate Student Employees */
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page-plane:     #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --gridline:       #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --accent-wash:    rgba(57,135,229,0.16);
+
+      --series-1: #3987e5;
+      --series-2: #d95926;
+      --series-3: #199e70;
+      --series-4: #c98500;
+      --series-5: #d55181;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page-plane:     #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --accent-wash:    rgba(57,135,229,0.16);
+
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page-plane);
+    color: var(--text-primary);
+    font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 24px 16px 40px;
+  }
+  .card {
+    max-width: 960px;
+    margin: 0 auto;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px 20px;
+  }
+  nav.pagenav {
+    max-width: 960px;
+    margin: 0 auto 12px;
+    font-size: 12.5px;
+  }
+  nav.pagenav a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-bottom: 1px solid var(--border);
+  }
+  nav.pagenav a:hover { color: var(--text-primary); }
+
+  h1 { font-size: 17px; font-weight: 700; margin: 0 0 2px; }
+  .subtitle { color: var(--text-secondary); font-size: 13px; margin: 0 0 20px; }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+  .play-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--series-1);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 9px 18px 9px 14px;
+    font: inherit;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    flex: none;
+  }
+  .play-btn:hover { filter: brightness(1.08); }
+  .play-btn:active { filter: brightness(0.96); }
+  .icon-play { width: 0; height: 0; border-style: solid; border-width: 6px 0 6px 10px; border-color: transparent transparent transparent #fff; }
+  .icon-pause { width: 9px; height: 12px; position: relative; }
+  .icon-pause::before, .icon-pause::after { content: ""; position: absolute; top: 0; width: 3px; height: 12px; background: #fff; border-radius: 1px; }
+  .icon-pause::before { left: 0; }
+  .icon-pause::after { right: 0; }
+
+  .scrub-wrap { flex: 1; display: flex; align-items: center; gap: 12px; }
+  input[type="range"] {
+    flex: 1;
+    accent-color: var(--series-1);
+    height: 4px;
+  }
+  .year-readout {
+    flex: none;
+    font-size: 34px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    min-width: 92px;
+    text-align: right;
+  }
+
+  .chart-wrap { position: relative; margin-top: 6px; }
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .gridline { stroke: var(--gridline); stroke-width: 1; shape-rendering: crispEdges; }
+  .baseline { stroke: var(--baseline); stroke-width: 1; shape-rendering: crispEdges; }
+  .axis-label { fill: var(--text-muted); font-size: 11px; }
+  .cat-label { fill: var(--text-muted); font-size: 11px; }
+  .value-label { fill: var(--text-primary); font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; text-anchor: middle; }
+  .bar { }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+
+  .notes { color: var(--text-muted); font-size: 11.5px; margin-top: 18px; line-height: 1.5; }
+  .notes p { margin: 0 0 6px; }
+
+  details.table-view { margin-top: 16px; }
+  summary { cursor: pointer; color: var(--text-secondary); font-size: 12.5px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; font-size: 12px; }
+  th, td { text-align: right; padding: 4px 8px; font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--gridline); }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--text-muted); font-weight: 600; }
+  td { color: var(--text-secondary); }
+</style>
+</head>
+<body>
+  <nav class="pagenav"><a href="AAUP_Trends_Colored.html">&larr; Line chart (colored)</a> &middot; <a href="AAUP_FacultyRoles_BarStep.html">Faculty roles step chart (1987&ndash;2021) &rarr;</a></nav>
+
+  <div class="card">
+    <h1>Change in Instructional Staff Employment Status, 1975&ndash;2011</h1>
+    <p class="subtitle">All Institutions, National Totals &middot; Percent of Total Instructional Staff</p>
+
+    <div class="controls">
+      <button class="play-btn" id="playBtn" aria-label="Play animation">
+        <span class="icon-play" id="playIcon"></span>
+        <span id="playLabel">Play</span>
+      </button>
+      <div class="scrub-wrap">
+        <input type="range" id="yearSlider" min="0" max="10" step="1" value="0" aria-label="Year" />
+      </div>
+      <div class="year-readout" id="yearReadout">1975</div>
+    </div>
+    <div class="sr-only" role="status" aria-live="polite" id="srAnnounce"></div>
+
+    <div class="chart-wrap">
+      <svg id="chart" viewBox="0 0 900 560" role="img" aria-label="Animated bar chart of instructional staff employment by category"></svg>
+    </div>
+
+    <div class="notes">
+      <p><em>Notes:</em> Figures for 2011 are estimated. Figures from 2005 have been corrected from those published in 2012. Figures are for degree-granting institutions only, but the precise category of institutions included has changed over time. Graduate student employee figure for 1975 is from 1976. Percentages may not add to 100 due to rounding.</p>
+      <p><em>Source:</em> US Department of Education, IPEDS Fall Staff Survey.</p>
+    </div>
+
+    <details class="table-view">
+      <summary>View as table</summary>
+      <div style="overflow-x:auto">
+        <table id="dataTable"></table>
+      </div>
+    </details>
+  </div>
+
+<script>
+  const years = [1975, 1989, 1993, 1995, 1999, 2001, 2003, 2005, 2007, 2009, 2011];
+
+  const categories = [
+    { key: 's1', name: 'Full-Time Tenured Faculty',          lines: ['Full-Time', 'Tenured Faculty'],           color: 'var(--series-1)', values: [29.0, 27.5, 25.0, 24.8, 21.8, 20.3, 19.3, 17.8, 17.2, 16.8, 16.7] },
+    { key: 's2', name: 'Full-Time Non-Tenure-Track Faculty', lines: ['Full-Time Non-', 'Tenure-Track Faculty'],  color: 'var(--series-2)', values: [10.2, 14.1, 13.6, 13.6, 15.2, 15.4, 15.0, 14.8, 15.0, 15.1, 15.4] },
+    { key: 's3', name: 'Full-Time Tenure-Track Faculty',     lines: ['Full-Time', 'Tenure-Track Faculty'],      color: 'var(--series-3)', values: [16.1, 11.4, 10.2,  9.6,  8.9,  9.2,  8.8,  8.1,  8.0,  7.6,  7.3] },
+    { key: 's4', name: 'Part-Time Faculty',                  lines: ['Part-Time', 'Faculty'],                    color: 'var(--series-4)', values: [24.0, 30.3, 33.0, 33.0, 35.5, 36.0, 37.0, 39.2, 40.5, 41.1, 41.3] },
+    { key: 's5', name: 'Graduate Student Employees',         lines: ['Graduate Student', 'Employees'],           color: 'var(--series-5)', values: [20.4, 16.6, 18.1, 19.0, 18.8, 19.0, 20.1, 20.0, 19.5, 19.5, 19.4] },
+  ];
+
+  const W = 900, H = 560;
+  const M = { top: 20, right: 30, bottom: 92, left: 50 };
+  const plotW = W - M.left - M.right;
+  const plotH = H - M.top - M.bottom;
+  const yMax = 45;
+  const band = plotW / categories.length;
+  const barW = 24;
+
+  const yPos = v => M.top + plotH - (v / yMax) * plotH;
+  const baselineY = M.top + plotH;
+
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.getElementById('chart');
+
+  function el(tag, attrs) {
+    const e = document.createElementNS(svgNS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  function roundedTopRectPath(x, y, w, h, r) {
+    const bottom = baselineY;
+    const top = y;
+    const rr = Math.min(r, h > 0 ? h : 0, w / 2);
+    if (h <= 0.001) return `M ${x} ${bottom} L ${x + w} ${bottom} Z`;
+    return [
+      `M ${x} ${top + rr}`,
+      `Q ${x} ${top} ${x + rr} ${top}`,
+      `L ${x + w - rr} ${top}`,
+      `Q ${x + w} ${top} ${x + w} ${top + rr}`,
+      `L ${x + w} ${bottom}`,
+      `L ${x} ${bottom}`,
+      'Z'
+    ].join(' ');
+  }
+
+  // static chrome: gridlines + y ticks
+  for (let v = 0; v <= yMax; v += 5) {
+    const y = yPos(v);
+    svg.appendChild(el('line', { x1: M.left, x2: W - M.right, y1: y, y2: y, class: v === 0 ? 'baseline' : 'gridline' }));
+    const t = el('text', { x: M.left - 10, y: y + 4, class: 'axis-label', 'text-anchor': 'end' });
+    t.textContent = v;
+    svg.appendChild(t);
+  }
+
+  // category labels + bars + value labels
+  const barPaths = [];
+  const valueLabels = [];
+  categories.forEach((c, i) => {
+    const cx = M.left + band * i + band / 2;
+    const x = cx - barW / 2;
+
+    const path = el('path', { class: 'bar', fill: c.color, d: roundedTopRectPath(x, baselineY, barW, 0, 4) });
+    svg.appendChild(path);
+    barPaths.push(path);
+
+    const vLabel = el('text', { x: cx, y: baselineY - 10, class: 'value-label' });
+    vLabel.textContent = '0.0%';
+    svg.appendChild(vLabel);
+    valueLabels.push(vLabel);
+
+    const l1 = el('text', { x: cx, y: baselineY + 22, class: 'cat-label', 'text-anchor': 'middle' });
+    l1.textContent = c.lines[0];
+    svg.appendChild(l1);
+    const l2 = el('text', { x: cx, y: baselineY + 36, class: 'cat-label', 'text-anchor': 'middle' });
+    l2.textContent = c.lines[1];
+    svg.appendChild(l2);
+  });
+
+  function setBars(values) {
+    categories.forEach((c, i) => {
+      const cx = M.left + band * i + band / 2;
+      const x = cx - barW / 2;
+      const v = Math.max(0, values[i]);
+      const topY = yPos(v);
+      const h = baselineY - topY;
+      barPaths[i].setAttribute('d', roundedTopRectPath(x, topY, barW, h, 4));
+      valueLabels[i].setAttribute('y', topY - 10);
+      valueLabels[i].textContent = v.toFixed(1) + '%';
+    });
+  }
+
+  // animation state
+  let currentIndex = 0;
+  let displayValues = categories.map(c => c.values[0]);
+  let playing = false;
+  const STEP_MS = 900;
+
+  function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
+
+  const yearReadout = document.getElementById('yearReadout');
+  const srAnnounce = document.getElementById('srAnnounce');
+  const slider = document.getElementById('yearSlider');
+  const playBtn = document.getElementById('playBtn');
+  const playIcon = document.getElementById('playIcon');
+  const playLabel = document.getElementById('playLabel');
+
+  function updatePlayUI() {
+    playIcon.className = playing ? 'icon-pause' : 'icon-play';
+    playLabel.textContent = playing ? 'Pause' : 'Play';
+    playBtn.setAttribute('aria-label', playing ? 'Pause animation' : 'Play animation');
+  }
+
+  function tweenTo(targetIndex, duration) {
+    return new Promise(resolve => {
+      const start = displayValues.slice();
+      const end = categories.map(c => c.values[targetIndex]);
+      const t0 = performance.now();
+      yearReadout.textContent = years[targetIndex];
+      function frame(now) {
+        const raw = Math.min(1, (now - t0) / duration);
+        const te = easeInOutCubic(raw);
+        const vals = start.map((v, i) => v + (end[i] - v) * te);
+        displayValues = vals;
+        setBars(vals);
+        if (raw < 1 && playing) {
+          requestAnimationFrame(frame);
+        } else {
+          if (raw >= 1) { displayValues = end.slice(); setBars(displayValues); }
+          resolve(raw >= 1);
+        }
+      }
+      requestAnimationFrame(frame);
+    });
+  }
+
+  async function play() {
+    if (playing) return;
+    if (currentIndex >= years.length - 1) {
+      currentIndex = 0;
+      displayValues = categories.map(c => c.values[0]);
+      setBars(displayValues);
+      yearReadout.textContent = years[0];
+      slider.value = 0;
+    }
+    playing = true;
+    updatePlayUI();
+    while (playing && currentIndex < years.length - 1) {
+      const target = currentIndex + 1;
+      const completed = await tweenTo(target, STEP_MS);
+      if (completed) {
+        currentIndex = target;
+        slider.value = currentIndex;
+        srAnnounce.textContent = `${years[currentIndex]}: ` + categories.map(c => `${c.name} ${c.values[currentIndex].toFixed(1)}%`).join(', ');
+      } else {
+        break;
+      }
+    }
+    playing = false;
+    updatePlayUI();
+  }
+
+  function pause() {
+    playing = false;
+    updatePlayUI();
+  }
+
+  playBtn.addEventListener('click', () => {
+    if (playing) pause(); else play();
+  });
+
+  slider.addEventListener('input', () => {
+    playing = false;
+    updatePlayUI();
+    currentIndex = parseInt(slider.value, 10);
+    displayValues = categories.map(c => c.values[currentIndex]);
+    setBars(displayValues);
+    yearReadout.textContent = years[currentIndex];
+  });
+
+  setBars(displayValues);
+
+  // table view
+  const table = document.getElementById('dataTable');
+  const thead = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  headRow.appendChild(document.createElement('th')).textContent = 'Year';
+  categories.forEach(c => { const th = document.createElement('th'); th.textContent = c.name; headRow.appendChild(th); });
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  years.forEach((yr, i) => {
+    const row = document.createElement('tr');
+    const yrCell = document.createElement('td'); yrCell.textContent = yr; row.appendChild(yrCell);
+    categories.forEach(c => { const td = document.createElement('td'); td.textContent = c.values[i].toFixed(1) + '%'; row.appendChild(td); });
+    tbody.appendChild(row);
+  });
+  table.appendChild(tbody);
+</script>
+</body>
+</html>

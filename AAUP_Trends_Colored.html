@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Trends in Instructional Staff Employment Status, 1975–2011</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page-plane:     #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+
+    --series-1: #2a78d6; /* Full-Time Tenured Faculty */
+    --series-2: #eb6834; /* Full-Time Non-Tenure-Track Faculty */
+    --series-3: #1baf7a; /* Full-Time Tenure-Track Faculty */
+    --series-4: #eda100; /* Part-Time Faculty */
+    --series-5: #e87ba4; /* Graduate Student Employees */
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page-plane:     #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --gridline:       #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+
+      --series-1: #3987e5;
+      --series-2: #d95926;
+      --series-3: #199e70;
+      --series-4: #c98500;
+      --series-5: #d55181;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page-plane:     #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page-plane);
+    color: var(--text-primary);
+    font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 24px 16px 40px;
+  }
+  .card {
+    max-width: 960px;
+    margin: 0 auto;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px 20px;
+  }
+  h1 {
+    font-size: 17px;
+    font-weight: 700;
+    margin: 0 0 2px;
+  }
+  .subtitle {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin: 0 0 18px;
+  }
+  .chart-wrap {
+    position: relative;
+  }
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .gridline { stroke: var(--gridline); stroke-width: 1; shape-rendering: crispEdges; }
+  .baseline { stroke: var(--baseline); stroke-width: 1; shape-rendering: crispEdges; }
+  .axis-label { fill: var(--text-muted); font-size: 11px; }
+  .series-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .series-dot { stroke: var(--surface-1); stroke-width: 2; }
+  .end-label-key { stroke-width: 2; stroke-linecap: round; }
+  .end-label-text { fill: var(--text-secondary); font-size: 12px; font-weight: 600; }
+  .crosshair { stroke: var(--baseline); stroke-width: 1; opacity: 0; pointer-events: none; }
+  .hover-dot { opacity: 0; pointer-events: none; }
+  .hit-col { fill: transparent; }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    margin: 18px 2px 4px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-secondary); }
+  .legend-swatch { width: 18px; height: 2px; border-radius: 2px; flex: none; }
+
+  .tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    opacity: 0;
+    transition: opacity 0.08s ease;
+    min-width: 190px;
+    z-index: 5;
+  }
+  .tooltip-year { color: var(--text-primary); font-weight: 700; margin-bottom: 6px; }
+  .tooltip-row { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
+  .tooltip-key { width: 12px; height: 2px; border-radius: 2px; flex: none; }
+  .tooltip-name { color: var(--text-secondary); flex: 1; }
+  .tooltip-value { color: var(--text-primary); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  .notes { color: var(--text-muted); font-size: 11.5px; margin-top: 18px; line-height: 1.5; }
+  .notes p { margin: 0 0 6px; }
+
+  details.table-view { margin-top: 16px; }
+  summary { cursor: pointer; color: var(--text-secondary); font-size: 12.5px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; font-size: 12px; }
+  th, td { text-align: right; padding: 4px 8px; font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--gridline); }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--text-muted); font-weight: 600; }
+  td { color: var(--text-secondary); }
+  nav.pagenav { max-width: 960px; margin: 0 auto 12px; font-size: 12.5px; }
+  nav.pagenav a { color: var(--text-secondary); text-decoration: none; border-bottom: 1px solid var(--border); }
+  nav.pagenav a:hover { color: var(--text-primary); }
+</style>
+</head>
+<body>
+  <nav class="pagenav"><a href="AAUP_Trends_BarAnimation.html">Bar chart animation &rarr;</a> &middot; <a href="AAUP_FacultyRoles_BarStep.html">Faculty roles step chart (1987&ndash;2021) &rarr;</a></nav>
+
+  <div class="card">
+    <h1>Trends in Instructional Staff Employment Status, 1975&ndash;2011</h1>
+    <p class="subtitle">All Institutions, National Totals &middot; Percent of Total Instructional Staff</p>
+
+    <div class="chart-wrap" id="chartWrap">
+      <svg id="chart" viewBox="0 0 920 600" role="img" aria-label="Line chart of instructional staff employment trends"></svg>
+      <div class="tooltip" id="tooltip"></div>
+    </div>
+
+    <div class="legend" id="legend"></div>
+
+    <details class="table-view">
+      <summary>View as table</summary>
+      <div style="overflow-x:auto">
+        <table id="dataTable"></table>
+      </div>
+    </details>
+
+    <div class="notes">
+      <p><em>Notes:</em> Figures for 2011 are estimated. Figures from 2005 have been corrected from those published in 2012. Figures are for degree-granting institutions only, but the precise category of institutions included has changed over time. Graduate student employee figure for 1975 is from 1976. Percentages may not add to 100 due to rounding.</p>
+      <p><em>Source:</em> US Department of Education, IPEDS Fall Staff Survey.</p>
+    </div>
+  </div>
+
+<script>
+  const years = [1975, 1989, 1993, 1995, 1999, 2001, 2003, 2005, 2007, 2009, 2011];
+
+  const series = [
+    { key: 's1', name: 'Full-Time Tenured Faculty',          color: 'var(--series-1)', values: [29.0, 27.5, 25.0, 24.8, 21.8, 20.3, 19.3, 17.8, 17.2, 16.8, 16.7] },
+    { key: 's2', name: 'Full-Time Non-Tenure-Track Faculty', color: 'var(--series-2)', values: [10.2, 14.1, 13.6, 13.6, 15.2, 15.4, 15.0, 14.8, 15.0, 15.1, 15.4] },
+    { key: 's3', name: 'Full-Time Tenure-Track Faculty',     color: 'var(--series-3)', values: [16.1, 11.4, 10.2,  9.6,  8.9,  9.2,  8.8,  8.1,  8.0,  7.6,  7.3] },
+    { key: 's4', name: 'Part-Time Faculty',                  color: 'var(--series-4)', values: [24.0, 30.3, 33.0, 33.0, 35.5, 36.0, 37.0, 39.2, 40.5, 41.1, 41.3] },
+    { key: 's5', name: 'Graduate Student Employees',         color: 'var(--series-5)', values: [20.4, 16.6, 18.1, 19.0, 18.8, 19.0, 20.1, 20.0, 19.5, 19.5, 19.4] },
+  ];
+
+  const W = 920, H = 600;
+  const M = { top: 30, right: 70, bottom: 60, left: 56 };
+  const plotW = W - M.left - M.right;
+  const plotH = H - M.top - M.bottom;
+  const yMax = 45;
+  const xStep = plotW / (years.length - 1);
+
+  const xPos = i => M.left + i * xStep;
+  const yPos = v => M.top + plotH - (v / yMax) * plotH;
+
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.getElementById('chart');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+  function el(tag, attrs) {
+    const e = document.createElementNS(svgNS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  // gridlines + y ticks
+  for (let v = 0; v <= yMax; v += 5) {
+    const y = yPos(v);
+    svg.appendChild(el('line', { x1: M.left, x2: W - M.right, y1: y, y2: y, class: v === 0 ? 'baseline' : 'gridline' }));
+    const t = el('text', { x: M.left - 10, y: y + 4, class: 'axis-label', 'text-anchor': 'end' });
+    t.textContent = v;
+    svg.appendChild(t);
+  }
+
+  // x labels
+  years.forEach((yr, i) => {
+    const t = el('text', { x: xPos(i), y: H - M.bottom + 26, class: 'axis-label', 'text-anchor': 'middle' });
+    t.textContent = yr;
+    svg.appendChild(t);
+  });
+
+  // lines
+  series.forEach(s => {
+    const d = s.values.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xPos(i)} ${yPos(v)}`).join(' ');
+    svg.appendChild(el('path', { d, class: 'series-line', stroke: s.color, 'data-key': s.key }));
+  });
+
+  // dots
+  series.forEach(s => {
+    s.values.forEach((v, i) => {
+      svg.appendChild(el('circle', { cx: xPos(i), cy: yPos(v), r: 4, fill: s.color, class: 'series-dot', 'data-key': s.key }));
+    });
+  });
+
+  // selective end labels for the two extreme/story series: Part-Time (rising) and Tenure-Track (falling)
+  const endLabelSeries = ['s4', 's3'];
+  endLabelSeries.forEach(key => {
+    const s = series.find(x => x.key === key);
+    const i = years.length - 1;
+    const y = yPos(s.values[i]);
+    const x = xPos(i) + 10;
+    svg.appendChild(el('line', { x1: x, x2: x + 14, y1: y, y2: y, class: 'end-label-key', stroke: s.color }));
+    const t = el('text', { x: x + 18, y: y + 4, class: 'end-label-text' });
+    t.textContent = `${s.values[i].toFixed(1)}%`;
+    svg.appendChild(t);
+  });
+
+  // hover layer: crosshair + one tooltip for all series
+  const crosshair = el('line', { class: 'crosshair', y1: M.top, y2: H - M.bottom });
+  svg.appendChild(crosshair);
+  const hoverDots = series.map(s => {
+    const c = el('circle', { r: 5, fill: s.color, class: 'hover-dot' });
+    svg.appendChild(c);
+    return c;
+  });
+  const hitCols = years.map((yr, i) => {
+    const rect = el('rect', {
+      x: xPos(i) - xStep / 2, y: M.top, width: xStep, height: plotH,
+      class: 'hit-col', 'data-i': i, tabindex: 0
+    });
+    svg.appendChild(rect);
+    return rect;
+  });
+
+  const tooltip = document.getElementById('tooltip');
+  const wrap = document.getElementById('chartWrap');
+
+  function showAt(i) {
+    const x = xPos(i);
+    crosshair.setAttribute('x1', x);
+    crosshair.setAttribute('x2', x);
+    crosshair.style.opacity = 1;
+    series.forEach((s, idx) => {
+      hoverDots[idx].setAttribute('cx', x);
+      hoverDots[idx].setAttribute('cy', yPos(s.values[i]));
+      hoverDots[idx].style.opacity = 1;
+    });
+
+    tooltip.innerHTML = '';
+    const yearEl = document.createElement('div');
+    yearEl.className = 'tooltip-year';
+    yearEl.textContent = years[i];
+    tooltip.appendChild(yearEl);
+
+    series.forEach(s => {
+      const row = document.createElement('div');
+      row.className = 'tooltip-row';
+      const key = document.createElement('span');
+      key.className = 'tooltip-key';
+      key.style.background = s.color;
+      const name = document.createElement('span');
+      name.className = 'tooltip-name';
+      name.textContent = s.name;
+      const val = document.createElement('span');
+      val.className = 'tooltip-value';
+      val.textContent = s.values[i].toFixed(1) + '%';
+      row.appendChild(key); row.appendChild(name); row.appendChild(val);
+      tooltip.appendChild(row);
+    });
+
+    const pct = x / W;
+    const wrapWidth = wrap.getBoundingClientRect().width;
+    let left = pct * wrapWidth + 14;
+    if (left + 200 > wrapWidth) left = pct * wrapWidth - 214;
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = (yPos(45) - 4) + 'px';
+    tooltip.style.opacity = 1;
+  }
+
+  function hideTooltip() {
+    crosshair.style.opacity = 0;
+    hoverDots.forEach(d => d.style.opacity = 0);
+    tooltip.style.opacity = 0;
+  }
+
+  hitCols.forEach((rect, i) => {
+    rect.addEventListener('pointerenter', () => showAt(i));
+    rect.addEventListener('pointermove', () => showAt(i));
+    rect.addEventListener('focus', () => showAt(i));
+    rect.addEventListener('blur', hideTooltip);
+  });
+  svg.addEventListener('pointerleave', hideTooltip);
+
+  // legend
+  const legend = document.getElementById('legend');
+  series.forEach(s => {
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    const sw = document.createElement('span');
+    sw.className = 'legend-swatch';
+    sw.style.background = s.color;
+    const label = document.createElement('span');
+    label.textContent = s.name;
+    item.appendChild(sw); item.appendChild(label);
+    legend.appendChild(item);
+  });
+
+  // table view
+  const table = document.getElementById('dataTable');
+  const thead = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  headRow.appendChild(document.createElement('th')).textContent = 'Year';
+  series.forEach(s => { const th = document.createElement('th'); th.textContent = s.name; headRow.appendChild(th); });
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  years.forEach((yr, i) => {
+    const row = document.createElement('tr');
+    const yrCell = document.createElement('td'); yrCell.textContent = yr; row.appendChild(yrCell);
+    series.forEach(s => { const td = document.createElement('td'); td.textContent = s.values[i].toFixed(1) + '%'; row.appendChild(td); });
+    tbody.appendChild(row);
+  });
+  table.appendChild(tbody);
+</script>
+</body>
+</html>

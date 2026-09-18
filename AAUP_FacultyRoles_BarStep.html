@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Faculty Roles, Step Chart</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page-plane:     #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+
+    --series-1: #2a78d6; /* Full-Time Tenured */
+    --series-2: #eb6834; /* Full-Time Non-Tenure-Track */
+    --series-3: #1baf7a; /* Full-Time Tenure-Track */
+    --series-4: #eda100; /* Part-Time */
+    --series-5: #e87ba4; /* Full-Time No Tenure System */
+
+    --status-good:     #0ca30c; /* fixed, never themed */
+    --status-critical: #b5524a; /* fixed, never themed - muted brick red */
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page-plane:     #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --gridline:       #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+
+      --series-1: #3987e5;
+      --series-2: #d95926;
+      --series-3: #199e70;
+      --series-4: #c98500;
+      --series-5: #d55181;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page-plane:     #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page-plane);
+    color: var(--text-primary);
+    font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 24px 16px 40px;
+  }
+  .card {
+    max-width: 960px;
+    margin: 0 auto;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px 20px;
+  }
+  nav.pagenav {
+    max-width: 960px;
+    margin: 0 auto 12px;
+    font-size: 12.5px;
+    display: flex;
+    gap: 16px;
+  }
+  nav.pagenav a { color: var(--text-secondary); text-decoration: none; border-bottom: 1px solid var(--border); }
+  nav.pagenav a:hover { color: var(--text-primary); }
+
+  h1 { font-size: 17px; font-weight: 700; margin: 0 0 2px; }
+  .subtitle { color: var(--text-secondary); font-size: 13px; margin: 0 0 20px; }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .advance-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--series-1);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 9px 18px;
+    font: inherit;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    flex: none;
+  }
+  .advance-btn:hover { filter: brightness(1.08); }
+  .advance-btn:active { filter: brightness(0.96); }
+  .advance-btn:disabled { opacity: 0.5; cursor: default; filter: none; }
+
+  .scrub-wrap { flex: 1; min-width: 140px; display: flex; align-items: center; gap: 12px; }
+  input[type="range"] { flex: 1; accent-color: var(--series-1); height: 4px; }
+
+  .year-readout {
+    flex: none;
+    font-size: 34px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    min-width: 92px;
+    text-align: right;
+  }
+
+  .chart-wrap { position: relative; margin-top: 10px; }
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .gridline { stroke: var(--gridline); stroke-width: 1; shape-rendering: crispEdges; }
+  .baseline { stroke: var(--baseline); stroke-width: 1; shape-rendering: crispEdges; }
+  .axis-label { fill: var(--text-muted); font-size: 11px; }
+  .cat-label { fill: var(--text-muted); font-size: 10px; }
+  .value-label { fill: var(--text-primary); font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; text-anchor: middle; }
+
+  .key-box { fill: var(--surface-1); stroke: var(--border); stroke-width: 1; }
+  .key-title { fill: var(--text-secondary); font-size: 10.5px; font-weight: 600; }
+  .pie-slice { stroke: var(--surface-1); stroke-width: 2; stroke-linejoin: round; }
+  .key-dot { }
+  .key-label { font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    margin: 18px 2px 4px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
+  .legend-swatch { width: 14px; height: 14px; border-radius: 3px; flex: none; }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+
+  .notes { color: var(--text-muted); font-size: 11.5px; margin-top: 18px; line-height: 1.5; }
+  .notes p { margin: 0 0 6px; }
+
+  details.table-view { margin-top: 16px; }
+  summary { cursor: pointer; color: var(--text-secondary); font-size: 12.5px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; font-size: 12px; }
+  th, td { text-align: right; padding: 4px 8px; font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--gridline); }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--text-muted); font-weight: 600; }
+  td { color: var(--text-secondary); }
+</style>
+</head>
+<body>
+  <nav class="pagenav">
+    <a href="AAUP_Trends_Colored.html">Line chart (1975&ndash;2011)</a>
+    <a href="AAUP_Trends_BarAnimation.html">Bar animation (1975&ndash;2011)</a>
+  </nav>
+
+  <div class="card">
+    <h1>The US Academic Workforce Has Shifted from Mostly Tenured to Mostly Contingent Faculty</h1>
+    <p class="subtitle">Percentage of total number of faculty, by appointment type, fall 1987&ndash;2021 &middot; Bars ordered left to right by their relative size in 1987</p>
+
+    <div class="controls">
+      <button class="advance-btn" id="advanceBtn">
+        <span id="advanceLabel">Advance 5 Years &rarr;</span>
+      </button>
+      <div class="scrub-wrap">
+        <input type="range" id="yearSlider" min="0" max="7" step="1" value="0" aria-label="Year" />
+      </div>
+      <div class="year-readout" id="yearReadout">1987</div>
+    </div>
+    <div class="sr-only" role="status" aria-live="polite" id="srAnnounce"></div>
+
+    <div class="chart-wrap">
+      <svg id="chart" viewBox="0 0 900 560" role="img" aria-label="Step bar chart of faculty appointment type by year"></svg>
+    </div>
+
+    <div class="legend" id="legend"></div>
+
+    <div class="notes">
+      <p><em>Note:</em> Figures represent nonmedical instructional staff, with or without formal faculty status, in degree-granting nonprofit institutions participating in Title IV federal financial aid programs. Percentages may not sum to 100 due to rounding.</p>
+      <p><em>Source:</em> AAUP Research Department, Figure 1. Data for 1987&ndash;1998 are estimates from the National Study of Postsecondary Faculty (NSOPF), which carry sampling error and are read here from the published chart; data for 2002&ndash;2021 are from the IPEDS Human Resources survey. Years shown step in roughly 5-year increments (1987, 1992, 1997, 2002, 2007, 2012, 2017, 2021).</p>
+    </div>
+
+    <details class="table-view">
+      <summary>View as table</summary>
+      <div style="overflow-x:auto">
+        <table id="dataTable"></table>
+      </div>
+    </details>
+  </div>
+
+<script>
+  const years = [1987, 1992, 1997, 2002, 2007, 2012, 2017, 2021];
+
+  // Fixed category -> color identity (consistent with the companion line/animation charts)
+  const categoryDefs = {
+    tenured:          { name: 'Full-Time Tenured',           color: 'var(--series-1)', lines: ['Full-Time', 'Tenured'],          values: [39.0, 32.0, 30.0, 25.9, 24.3, 23.7, 23.1, 24.0] },
+    non_tenure_track: { name: 'Full-Time Non-Tenure-Track',  color: 'var(--series-2)', lines: ['Non-Tenure-', 'Track'],           values: [ 8.0,  7.5,  9.0,  8.9,  9.5, 10.3, 11.1, 13.0] },
+    tenure_track:     { name: 'Full-Time Tenure-Track',      color: 'var(--series-3)', lines: ['Full-Time', 'Tenure-Track'],     values: [14.0, 12.5, 11.0, 11.3, 10.7,  9.1,  9.3,  9.0] },
+    part_time:        { name: 'Part-Time',                   color: 'var(--series-4)', lines: ['Part-Time', 'Faculty'],          values: [33.0, 39.0, 42.0, 48.8, 50.0, 51.2, 49.8, 48.0] },
+    no_tenure_system: { name: 'Full-Time, No Tenure System', color: 'var(--series-5)', lines: ['No Tenure', 'System'],           values: [ 5.0,  6.0,  6.0,  5.5,  5.9,  6.5,  6.5,  7.0] },
+  };
+
+  // Bar left-to-right order = descending by 1987 value (pre-1990 relative size)
+  const order = ['tenured', 'part_time', 'tenure_track', 'non_tenure_track', 'no_tenure_system'];
+  const categories = order.map(key => ({ key, ...categoryDefs[key] }));
+
+  const W = 900, H = 560;
+  const M = { top: 20, right: 30, bottom: 90, left: 50 };
+  const plotW = W - M.left - M.right;
+  const plotH = H - M.top - M.bottom;
+  const yMax = 60;
+  const barW = 24;
+  const gap = 30;
+  const clusterW = categories.length * barW + (categories.length - 1) * gap;
+  const clusterX0 = M.left + (plotW - clusterW) / 2;
+
+  const yPos = v => M.top + plotH - (v / yMax) * plotH;
+  const baselineY = M.top + plotH;
+
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.getElementById('chart');
+
+  function el(tag, attrs) {
+    const e = document.createElementNS(svgNS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  function roundedTopRectPath(x, y, w, h, r) {
+    const bottom = baselineY;
+    const top = y;
+    const rr = Math.min(r, h > 0 ? h : 0, w / 2);
+    if (h <= 0.001) return `M ${x} ${bottom} L ${x + w} ${bottom} Z`;
+    return [
+      `M ${x} ${top + rr}`,
+      `Q ${x} ${top} ${x + rr} ${top}`,
+      `L ${x + w - rr} ${top}`,
+      `Q ${x + w} ${top} ${x + w} ${top + rr}`,
+      `L ${x + w} ${bottom}`,
+      `L ${x} ${bottom}`,
+      'Z'
+    ].join(' ');
+  }
+
+  // static chrome: gridlines + y ticks
+  for (let v = 0; v <= yMax; v += 10) {
+    const y = yPos(v);
+    svg.appendChild(el('line', { x1: M.left, x2: W - M.right, y1: y, y2: y, class: v === 0 ? 'baseline' : 'gridline' }));
+    const t = el('text', { x: M.left - 10, y: y + 4, class: 'axis-label', 'text-anchor': 'end' });
+    t.textContent = v + '%';
+    svg.appendChild(t);
+  }
+
+  // key: ratio of Tenured + Tenure-Track faculty to all other faculty, as a 2-slice pie
+  const keyX = M.left + 10, keyY = M.top + 10, keyW = 214, keyH = 86;
+  svg.appendChild(el('rect', { x: keyX, y: keyY, width: keyW, height: keyH, rx: 8, class: 'key-box' }));
+  const keyTitle = el('text', { x: keyX + 14, y: keyY + 20, class: 'key-title' });
+  keyTitle.textContent = 'Tenured + Tenure-Track : Other';
+  svg.appendChild(keyTitle);
+
+  const pieCx = keyX + 38, pieCy = keyY + 55, pieR = 26;
+  const pieSliceA = el('path', { class: 'pie-slice' });
+  const pieSliceB = el('path', { class: 'pie-slice' });
+  svg.appendChild(pieSliceA);
+  svg.appendChild(pieSliceB);
+
+  const labelsX = keyX + 78;
+  const dotA = el('rect', { x: labelsX, y: keyY + 36, width: 9, height: 9, rx: 2, class: 'key-dot' });
+  const textA = el('text', { x: labelsX + 15, y: keyY + 45, class: 'key-label' });
+  const dotB = el('rect', { x: labelsX, y: keyY + 60, width: 9, height: 9, rx: 2, class: 'key-dot' });
+  const textB = el('text', { x: labelsX + 15, y: keyY + 69, class: 'key-label' });
+  svg.appendChild(dotA); svg.appendChild(textA);
+  svg.appendChild(dotB); svg.appendChild(textB);
+
+  const TT_IDX = order.indexOf('tenured');
+  const TTRACK_IDX = order.indexOf('tenure_track');
+
+  function pieSlicePath(cx, cy, r, startFrac, endFrac) {
+    if (endFrac - startFrac >= 0.9999) {
+      // full circle: draw as two half-arcs so 100% still renders
+      const topY = cy - r, botY = cy + r;
+      return `M ${cx} ${topY} A ${r} ${r} 0 1 1 ${cx} ${botY} A ${r} ${r} 0 1 1 ${cx} ${topY} Z`;
+    }
+    const a0 = (-90 + startFrac * 360) * Math.PI / 180;
+    const a1 = (-90 + endFrac * 360) * Math.PI / 180;
+    const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
+    const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+    const largeArc = (endFrac - startFrac) > 0.5 ? 1 : 0;
+    return `M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 ${largeArc} 1 ${x1} ${y1} Z`;
+  }
+
+  function updateRatioKey(values) {
+    const tt = values[TT_IDX] + values[TTRACK_IDX];
+    const other = 100 - tt;
+    const ttFrac = tt / 100;
+    const ttColor = 'var(--status-good)';
+    const otherColor = 'var(--status-critical)';
+
+    pieSliceA.setAttribute('d', pieSlicePath(pieCx, pieCy, pieR, 0, ttFrac));
+    pieSliceA.setAttribute('fill', ttColor);
+    pieSliceB.setAttribute('d', pieSlicePath(pieCx, pieCy, pieR, ttFrac, 1));
+    pieSliceB.setAttribute('fill', otherColor);
+
+    dotA.setAttribute('fill', ttColor);
+    textA.textContent = `Tenured + TT  ${tt.toFixed(1)}%`;
+    textA.setAttribute('fill', ttColor);
+
+    dotB.setAttribute('fill', otherColor);
+    textB.textContent = `Other  ${other.toFixed(1)}%`;
+    textB.setAttribute('fill', otherColor);
+  }
+
+  const barPaths = [];
+  const valueLabels = [];
+  categories.forEach((c, i) => {
+    const cx = clusterX0 + i * (barW + gap) + barW / 2;
+    const x = cx - barW / 2;
+
+    const path = el('path', { class: 'bar', fill: c.color, d: roundedTopRectPath(x, baselineY, barW, 0, 4) });
+    svg.appendChild(path);
+    barPaths.push(path);
+
+    const vLabel = el('text', { x: cx, y: baselineY - 10, class: 'value-label' });
+    vLabel.textContent = '0.0%';
+    svg.appendChild(vLabel);
+    valueLabels.push(vLabel);
+
+    const l1 = el('text', { x: cx, y: baselineY + 22, class: 'cat-label', 'text-anchor': 'middle' });
+    l1.textContent = c.lines[0];
+    svg.appendChild(l1);
+    const l2 = el('text', { x: cx, y: baselineY + 34, class: 'cat-label', 'text-anchor': 'middle' });
+    l2.textContent = c.lines[1];
+    svg.appendChild(l2);
+  });
+
+  function setBars(values) {
+    categories.forEach((c, i) => {
+      const cx = clusterX0 + i * (barW + gap) + barW / 2;
+      const x = cx - barW / 2;
+      const v = Math.max(0, values[i]);
+      const topY = yPos(v);
+      const h = baselineY - topY;
+      barPaths[i].setAttribute('d', roundedTopRectPath(x, topY, barW, h, 4));
+      valueLabels[i].setAttribute('y', topY - 10);
+      valueLabels[i].textContent = v.toFixed(1) + '%';
+    });
+    updateRatioKey(values);
+  }
+
+  let currentIndex = 0;
+  let displayValues = categories.map(c => c.values[0]);
+  let animating = false;
+
+  function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
+
+  const yearReadout = document.getElementById('yearReadout');
+  const srAnnounce = document.getElementById('srAnnounce');
+  const slider = document.getElementById('yearSlider');
+  const advanceBtn = document.getElementById('advanceBtn');
+  const advanceLabel = document.getElementById('advanceLabel');
+
+  function updateButtonUI() {
+    if (currentIndex >= years.length - 1) {
+      advanceLabel.textContent = 'Restart ↺';
+    } else {
+      advanceLabel.textContent = 'Advance 5 Years →';
+    }
+    advanceBtn.disabled = animating;
+  }
+
+  function tweenTo(targetIndex, duration) {
+    return new Promise(resolve => {
+      const start = displayValues.slice();
+      const end = categories.map(c => c.values[targetIndex]);
+      const t0 = performance.now();
+      yearReadout.textContent = years[targetIndex];
+      function frame(now) {
+        const raw = Math.min(1, (now - t0) / duration);
+        const te = easeInOutCubic(raw);
+        const vals = start.map((v, i) => v + (end[i] - v) * te);
+        displayValues = vals;
+        setBars(vals);
+        if (raw < 1) {
+          requestAnimationFrame(frame);
+        } else {
+          displayValues = end.slice();
+          setBars(displayValues);
+          resolve();
+        }
+      }
+      requestAnimationFrame(frame);
+    });
+  }
+
+  async function advance() {
+    if (animating) return;
+    animating = true;
+    updateButtonUI();
+
+    if (currentIndex >= years.length - 1) {
+      currentIndex = 0;
+      await tweenTo(0, 500);
+    } else {
+      currentIndex += 1;
+      await tweenTo(currentIndex, 700);
+    }
+
+    slider.value = currentIndex;
+    srAnnounce.textContent = `${years[currentIndex]}: ` + categories.map(c => `${c.name} ${c.values[currentIndex].toFixed(1)}%`).join(', ');
+    animating = false;
+    updateButtonUI();
+  }
+
+  advanceBtn.addEventListener('click', advance);
+
+  slider.addEventListener('input', () => {
+    if (animating) return;
+    currentIndex = parseInt(slider.value, 10);
+    displayValues = categories.map(c => c.values[currentIndex]);
+    setBars(displayValues);
+    yearReadout.textContent = years[currentIndex];
+    updateButtonUI();
+  });
+
+  setBars(displayValues);
+  updateButtonUI();
+
+  // legend
+  const legend = document.getElementById('legend');
+  categories.forEach(c => {
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    const sw = document.createElement('span');
+    sw.className = 'legend-swatch';
+    sw.style.background = c.color;
+    const label = document.createElement('span');
+    label.textContent = c.name;
+    item.appendChild(sw); item.appendChild(label);
+    legend.appendChild(item);
+  });
+
+  // table view (chronological column order, regardless of bar display order)
+  const table = document.getElementById('dataTable');
+  const thead = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  headRow.appendChild(document.createElement('th')).textContent = 'Year';
+  categories.forEach(c => { const th = document.createElement('th'); th.textContent = c.name; headRow.appendChild(th); });
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  years.forEach((yr, i) => {
+    const row = document.createElement('tr');
+    const yrCell = document.createElement('td'); yrCell.textContent = yr; row.appendChild(yrCell);
+    categories.forEach(c => { const td = document.createElement('td'); td.textContent = c.values[i].toFixed(1) + '%'; row.appendChild(td); });
+    tbody.appendChild(row);
+  });
+  table.appendChild(tbody);
+</script>
+</body>
+</html>
